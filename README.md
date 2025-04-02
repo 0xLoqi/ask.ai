@@ -1,4 +1,6 @@
-# AI Screenshot Assistant
+# Blink
+
+Answers in a Blink.
 
 A desktop application built with Electron that provides an AI-powered screenshot assistant. This tool allows you to capture screenshots and get AI-powered insights about them using hotkeys.
 
