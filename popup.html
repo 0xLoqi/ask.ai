@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <button id="close-button" class="close-button" title="Close Window">&times;</button>
+
+        <div id="screenshot-container" class="screenshot-container">
+            <img id="screenshot-image" src="" alt="Screenshot Preview" style="display: none;">
+            <p id="loading-screenshot">Loading screenshot...</p>
+        </div>
+
+        <div class="interaction-area">
+            <textarea id="question-input" placeholder="Ask a question about the screenshot..." rows="2" aria-label="Question about the screenshot"></textarea>
+            <button id="submit-button">Ask AI</button>
+        </div>
+
+        <div id="response-area" class="response-area" style="display: none;" aria-live="polite"> <p><strong>AI Response:</strong></p>
+            <div id="response-content" class="response-content">
+                </div>
+             <div id="loading-indicator" class="loading" style="display: none;">
+                <span>.</span><span>.</span><span>.</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

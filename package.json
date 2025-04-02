@@ -1,0 +1,27 @@
+{
+    "name": "ai-screenshot-assistant",
+    "version": "0.1.0",
+    "description": "Hotkey triggered AI assistant for screenshots",
+    "main": "main.js",
+    "scripts": {
+      "start": "electron .",
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+      "electron",
+      "ai",
+      "screenshot",
+      "assistant",
+      "gpt",
+      "vision"
+    ],
+    "author": "Your Name <your.email@example.com>",
+    "license": "MIT",
+    "devDependencies": {
+      "electron": "^29.1.5"
+    },
+    "dependencies": {
+      "electron-store": "^8.2.0"
+    }
+  }
+  

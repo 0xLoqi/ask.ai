@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History</title>
+    <link rel="stylesheet" href="history.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Interaction History</h1>
+        <div class="controls">
+             <button id="refresh-button" title="Refresh History">Refresh</button>
+             <button id="clear-button" title="Clear All History">Clear History</button>
+        </div>
+        <div id="history-list" class="history-list">
+            <p id="loading-history">Loading history...</p>
+            </div>
+    </div>
+    <script src="history.js"></script>
+</body>
+</html>
