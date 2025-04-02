@@ -1,203 +1,220 @@
-/* popup.css */
-/* Styling for the AI Assistant popup window */
+/* popup.css (v2) */
+/* Styles for the redesigned voice input popup */
 
-/* Basic reset and body styling */
+/* Basic reset and body styling (similar to v1) */
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
     margin: 0;
     padding: 0;
-    background-color: #f8f9fa; /* Lighter background */
-    color: #212529; /* Darker text for better contrast */
-    overflow: hidden; /* Prevent scrollbars on the body itself */
-    border: 1px solid #dee2e6; /* Slightly softer border */
-    border-radius: 8px; /* Rounded corners for the window */
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
-    font-size: 14px; /* Base font size */
+    background-color: #f8f9fa;
+    color: #212529;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
 }
 
-/* Main container styling */
 .container {
-    padding: 16px; /* Slightly more padding */
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    /* Calculate height considering padding */
-    height: calc(100vh - 32px);
-    position: relative; /* Needed for absolute positioning of the close button */
-    box-sizing: border-box; /* Include padding in height calculation */
+    height: calc(100vh - 32px); /* Adjust height based on padding */
+    position: relative;
+    box-sizing: border-box;
 }
 
-/* Close Button Styling */
+/* Close Button (similar to v1) */
 .close-button {
-    position: absolute;
-    top: 8px; /* Position from top */
-    right: 8px; /* Position from right */
-    background: #e9ecef; /* Lighter background */
-    border: 1px solid #ced4da; /* Matching border */
-    color: #495057; /* Subdued color */
-    font-size: 18px; /* Slightly larger */
-    font-weight: bold;
-    width: 28px; /* Larger click target */
-    height: 28px; /* Larger click target */
-    border-radius: 50%; /* Circular */
-    cursor: pointer;
-    line-height: 26px; /* Adjust line height to center 'x' */
-    text-align: center;
+    position: absolute; top: 8px; right: 8px; background: #e9ecef; border: 1px solid #ced4da;
+    color: #495057; font-size: 18px; font-weight: bold; width: 28px; height: 28px;
+    border-radius: 50%; cursor: pointer; line-height: 26px; text-align: center;
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
-    z-index: 10; /* Ensure it's above other elements */
-    padding: 0; /* Remove default padding */
+    z-index: 10; padding: 0;
 }
+.close-button:hover { background-color: #f76e6e; color: white; border-color: #f14e4e; }
+.close-button:active { background-color: #e84343; transform: scale(0.95); }
 
-.close-button:hover {
-    background-color: #f76e6e; /* Reddish hover */
-    color: white;
-    border-color: #f14e4e;
-}
-
-.close-button:active {
-    background-color: #e84343; /* Darker red on click */
-    transform: scale(0.95); /* Slight shrink effect */
-}
-
-/* Screenshot Container Styling */
-.screenshot-container {
-    flex: 1; /* Allow it to grow and fill available space */
-    background-color: #e9ecef; /* Match close button background */
-    border: 1px dashed #adb5bd; /* Softer dashed border */
+/* Screenshot Preview Area */
+.screenshot-preview-area {
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
     border-radius: 6px;
-    margin-bottom: 12px; /* Space below screenshot */
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    /* flex: 0 1 auto; /* Don't grow, height based on content */
+    max-height: 150px; /* Limit max height */
+    overflow: hidden; /* Hide overflow */
+    display: flex; /* Use flexbox for layout */
+    flex-direction: column;
+}
+.preview-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6c757d;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+}
+.screenshot-container {
+    flex-grow: 1; /* Allow container to fill space */
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; /* Hide parts of image if too big */
-    min-height: 150px; /* Minimum height */
-    position: relative; /* For positioning loading text */
+    min-height: 50px; /* Minimum height */
+    overflow: hidden;
+    position: relative; /* For positioning text */
 }
-
-/* Screenshot Image Styling */
 #screenshot-image {
     max-width: 100%;
-    max-height: 100%;
-    display: block; /* Remove extra space below image */
-    object-fit: contain; /* Scale image while preserving aspect ratio */
-    border-radius: 4px; /* Slightly rounded corners for the image itself */
+    max-height: 100%; /* Max height within container */
+    display: block;
+    object-fit: contain;
+    border-radius: 4px;
 }
-
-/* Loading Text Styling */
-#loading-screenshot {
-    color: #6c757d; /* Bootstrap's secondary text color */
+#no-screenshot-text {
+    color: #6c757d;
     font-style: italic;
-    position: absolute; /* Center it within the container */
+    font-size: 13px;
     text-align: center;
+    position: absolute;
 }
 
-/* Interaction Area Styling (Textarea + Button) */
+/* Interaction Area (Status + Textarea) */
 .interaction-area {
     display: flex;
-    gap: 8px; /* Space between textarea and button */
+    align-items: flex-start; /* Align items to the top */
+    gap: 10px;
     margin-bottom: 12px;
 }
 
-/* Textarea Styling */
-#question-input {
-    flex-grow: 1; /* Textarea takes available width */
-    padding: 10px 12px; /* More padding */
+/* Status Indicator */
+.status-indicator {
+    flex-shrink: 0; /* Don't shrink */
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.status-indicator svg {
+    width: 20px;
+    height: 20px;
+    stroke: #6c757d; /* Default idle color */
+    transition: stroke 0.3s ease;
+}
+
+/* Status Indicator States */
+.status-indicator.idle svg { stroke: #6c757d; }
+.status-indicator.listening { background-color: #d1e7dd; border-color: #badbcc; animation: pulse 1.5s infinite; }
+.status-indicator.listening svg { stroke: #0f5132; } /* Greenish */
+.status-indicator.processing { background-color: #cff4fc; border-color: #b6effb; }
+.status-indicator.processing svg { stroke: #055160; } /* Bluish */
+.status-indicator.error { background-color: #f8d7da; border-color: #f5c6cb; }
+.status-indicator.error svg { stroke: #842029; } /* Reddish */
+
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(26, 188, 156, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(26, 188, 156, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(26, 188, 156, 0); }
+}
+
+
+/* Transcription Textarea */
+#transcription-input {
+    flex-grow: 1;
+    padding: 10px 12px;
     border: 1px solid #ced4da;
     border-radius: 4px;
     font-size: 14px;
-    resize: none; /* Prevent manual resizing */
+    resize: none;
     box-sizing: border-box;
-    background-color: #fff; /* White background */
-    line-height: 1.4; /* Improve readability */
+    background-color: #fff;
+    line-height: 1.5;
+    min-height: 60px; /* Minimum height */
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-
-#question-input:focus {
-    border-color: #80bdff; /* Blue border on focus */
+#transcription-input:focus {
+    border-color: #80bdff;
     outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Subtle glow on focus */
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+#transcription-input:disabled {
+     background-color: #e9ecef;
 }
 
-/* Submit Button Styling */
-#submit-button {
-    padding: 10px 18px; /* More padding */
-    background-color: #007bff; /* Primary blue */
-    color: white;
-    border: none;
+/* Action Buttons Area */
+.action-buttons {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.action-buttons button {
+    display: inline-flex; /* Align icon and text */
+    align-items: center;
+    gap: 6px; /* Space between icon and text */
+    padding: 8px 15px;
+    font-size: 13px;
+    font-weight: 500;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500; /* Slightly bolder */
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    white-space: nowrap; /* Prevent text wrapping */
+    border: 1px solid #ced4da;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
 }
-
-#submit-button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+.action-buttons button svg {
+    width: 16px; /* Icon size */
+    height: 16px;
 }
-
-#submit-button:active {
-    transform: scale(0.98); /* Slight shrink effect */
+.action-buttons button:active {
+    transform: scale(0.98);
 }
-
-#submit-button:disabled {
-    background-color: #6c757d; /* Gray when disabled */
+.action-buttons button:disabled {
+    opacity: 0.65;
     cursor: not-allowed;
-    opacity: 0.65; /* Make it look faded */
 }
 
-/* Response Area Styling */
+/* Specific Button Styles */
+.send-button {
+    background-color: #0d6efd; /* Bootstrap primary */
+    color: white;
+    border-color: #0d6efd;
+}
+.send-button:hover:not(:disabled) { background-color: #0b5ed7; border-color: #0a58ca; }
+
+.send-with-screenshot-button {
+    background-color: #6c757d; /* Bootstrap secondary */
+    color: white;
+    border-color: #6c757d;
+}
+.send-with-screenshot-button:hover:not(:disabled) { background-color: #5c636a; border-color: #565e64; }
+
+.cancel-button {
+    background-color: #f8f9fa;
+    color: #495057;
+    border-color: #ced4da;
+}
+.cancel-button:hover:not(:disabled) { background-color: #e2e6ea; border-color: #adb5bd;}
+
+
+/* Response Area (similar to v1) */
 .response-area {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0; /* Lighter border */
-    border-radius: 4px;
-    padding: 12px;
-    min-height: 60px; /* Minimum height */
-    max-height: 180px; /* Maximum height before scroll */
-    overflow-y: auto; /* Add scrollbar if content exceeds max-height */
-    font-size: 14px;
-    line-height: 1.6; /* Increased line height for readability */
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Subtle inner shadow */
+    flex: 1; /* Takes remaining vertical space */
+    background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 4px;
+    padding: 12px; min-height: 50px; overflow-y: auto; font-size: 14px;
+    line-height: 1.6; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    margin-top: auto; /* Push to bottom if space allows */
 }
+.response-content { white-space: pre-wrap; word-wrap: break-word; color: #343a40; }
+.response-area p { margin-top: 0; margin-bottom: 6px; color: #495057; font-weight: 600; }
 
-/* Response Content Styling */
-.response-content {
-     white-space: pre-wrap; /* Preserve whitespace and wrap text */
-     word-wrap: break-word; /* Break long words */
-     color: #343a40; /* Slightly darker text */
-}
-
-/* Response Area Paragraph Styling */
-.response-area p {
-    margin-top: 0;
-    margin-bottom: 6px;
-    color: #495057; /* Slightly muted color for the "AI Response:" label */
-    font-weight: 600; /* Bolder label */
-}
-
-/* Loading Indicator Styling */
-.loading {
-    text-align: center;
-    padding: 15px 0; /* More vertical padding */
-}
-
-.loading span {
-    display: inline-block;
-    width: 10px; /* Larger dots */
-    height: 10px; /* Larger dots */
-    background-color: #007bff;
-    border-radius: 50%;
-    margin: 0 3px; /* More space between dots */
-    /* Animation definition */
-    animation: bounce 1.4s infinite ease-in-out both;
-}
-
-/* Animation delays for the dots */
+/* Loading Indicator (same as v1) */
+.loading { text-align: center; padding: 15px 0; }
+.loading span { display: inline-block; width: 10px; height: 10px; background-color: #007bff; border-radius: 50%; margin: 0 3px; animation: bounce 1.4s infinite ease-in-out both; }
 .loading span:nth-child(1) { animation-delay: -0.32s; }
 .loading span:nth-child(2) { animation-delay: -0.16s; }
-/* The third span uses the base delay (0s) */
-
-/* Keyframes for the bouncing animation */
-@keyframes bounce {
-    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
-    40% { transform: scale(1.0); opacity: 1; }
-}
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1.0); opacity: 1; } }

@@ -2,35 +2,48 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self' blob:;"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Assistant</title>
-    <link rel="stylesheet" href="popup.css">
-</head>
+    <link rel="stylesheet" href="popup.css"> </head>
 <body>
     <div class="container">
         <button id="close-button" class="close-button" title="Close Window">&times;</button>
 
-        <div id="screenshot-container" class="screenshot-container">
-            <img id="screenshot-image" src="" alt="Screenshot Preview" style="display: none;">
-            <p id="loading-screenshot">Loading screenshot...</p>
-        </div>
-
-        <div class="interaction-area">
-            <textarea id="question-input" placeholder="Ask a question about the screenshot..." rows="2" aria-label="Question about the screenshot"></textarea>
-            <button id="submit-button">Ask AI</button>
-        </div>
-
-        <div id="response-area" class="response-area" style="display: none;" aria-live="polite"> <p><strong>AI Response:</strong></p>
-            <div id="response-content" class="response-content">
-                </div>
-             <div id="loading-indicator" class="loading" style="display: none;">
-                <span>.</span><span>.</span><span>.</span>
+        <div id="screenshot-preview-area" class="screenshot-preview-area" style="display: none;"> <p class="preview-title">Screenshot Preview</p>
+            <div id="screenshot-container" class="screenshot-container">
+                <img id="screenshot-image" src="" alt="Screenshot Preview">
+                <p id="no-screenshot-text">No screenshot captured recently.</p>
             </div>
         </div>
 
+        <div class="interaction-area">
+            <div id="status-indicator" class="status-indicator idle" title="Status: Idle">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic-off"><path d="M12 8V4a2 2 0 0 0-4 0v4"/><line x1="16" x2="16" y1="13" y2="17"/><line x1="8" x2="8" y1="17" y2="21"/><path d="M12 12a4 4 0 0 0-4-4v8a4 4 0 0 0 4-4Z"/><path d="M20.43 14.76A8.5 8.5 0 0 0 18 8V4a6 6 0 0 0-12 0v4a8.5 8.5 0 0 0 6.24 8.23"/><line x1="1" x2="23" y1="1" y2="23"/></svg>
+            </div>
+            <textarea id="transcription-input" placeholder="Press hotkey to start speaking..." rows="3" aria-label="Transcribed question"></textarea>
+        </div>
+
+        <div class="action-buttons">
+            <button id="send-button" class="send-button" title="Send Text Only (Enter)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send
+            </button>
+            <button id="send-with-screenshot-button" class="send-with-screenshot-button" title="Capture New Screenshot & Send (Shift+Enter)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M20.4 14.5L16 10l-4.5 4.5"/><path d="m15 12-2 2"/><path d="M3 17l5-5 6 6"/></svg>
+                Send with Screenshot
+            </button>
+             <button id="cancel-button" class="cancel-button" title="Cancel (Esc)">Cancel</button>
+        </div>
+
+        <div id="response-area" class="response-area" style="display: none;" aria-live="polite">
+            <p><strong>AI Response:</strong></p>
+            <div id="response-content" class="response-content"></div>
+            <div id="loading-indicator" class="loading" style="display: none;">
+                <span>.</span><span>.</span><span>.</span>
+            </div>
+        </div>
     </div>
 
-    <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script> </body>
 </html>
+

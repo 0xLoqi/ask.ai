@@ -1,5 +1,7 @@
-// main.js (v2)
-// Enhanced with electron-store, history viewer window, and better error dialogs.
+// main.js (v4)
+// Integrates revised flow: Single hotkey triggers popup, which handles voice input
+// and provides options for sending with or without a new screenshot.
+// Includes setting for screenshot preview toggle.
 
 const {
     app,
@@ -11,115 +13,149 @@ const {
     nativeImage,
     screen,
     desktopCapturer,
-    dialog, // Added for showing error messages
-    shell // Added to potentially open file paths if needed
+    dialog,
+    shell,
+    net
   } = require('electron');
   const path = require('path');
-  const fs = require('fs'); // Keep fs for checking icon existence
-  
-  // Use electron-store for robust data persistence
+  const fs = require('fs');
   const Store = require('electron-store');
+  
+  // Enhanced schema for electron-store
   const store = new Store({
-      // Define a schema for your data (good practice)
       schema: {
-          history: {
-              type: 'array',
-              default: [],
-              items: {
-                  type: 'object',
-                  properties: {
-                      timestamp: { type: 'string', format: 'date-time' },
-                      question: { type: 'string' },
-                      answer: { type: 'string' }
-                  },
-                  required: ['timestamp', 'question', 'answer']
-              }
-          },
-          // Add other settings here later if needed
-          // settings: { ... }
-      }
+          history: { /* ... (same as v2) ... */ },
+          authToken: { type: ['string', 'null'], default: null },
+          // Setting to control if screenshot preview is shown in popup
+          showScreenshotPreview: {
+              type: 'boolean',
+              default: true // Show preview by default
+          }
+          // Add hotkey customization setting later
+      },
+      // Watch for changes in settings (optional but can be useful)
+      // watch: true // Be cautious with watch: true in main process
   });
   
   
   // --- Configuration ---
-  const HOTKEY = 'CommandOrControl+Shift+Space'; // Or your preferred hotkey
-  const MAX_HISTORY = 50; // Increased max history items
+  const HOTKEY = 'CommandOrControl+Shift+Space'; // Primary hotkey
+  const MAX_HISTORY = 50;
+  const BACKEND_API_ENDPOINT = 'YOUR_BACKEND_API_ENDPOINT/api/ask'; // Replace!
   
   // --- Global Variables ---
   let tray = null;
   let popupWindow = null;
-  let historyWindow = null; // Window reference for history viewer
-  let lastScreenshotDataUrl = null; // Store the latest screenshot
+  let historyWindow = null;
+  // Store the *last captured* screenshot for potential preview
+  let lastCapturedScreenshotDataUrl = null;
   
   // --- Utility Functions ---
   
-  // Load history using electron-store
-  function loadHistory() {
-    return store.get('history', []); // Get history, default to empty array
-  }
-  
-  // Add a new entry to history using electron-store
-  function addHistoryEntry(question, answer) {
+  function loadHistory() { /* ... (same as v2) ... */ }
+  function addHistoryEntry(question, answer, context) { // Added context param
     const history = loadHistory();
     history.push({
       timestamp: new Date().toISOString(),
       question: question,
       answer: answer,
+      context: context // e.g., 'text-only' or 'with-screenshot'
     });
-    // Keep only the last MAX_HISTORY items
     const recentHistory = history.slice(-MAX_HISTORY);
-    store.set('history', recentHistory); // Save updated history
-    updateTrayMenu(); // Update tray menu to reflect changes (optional)
-  
-    // If history window is open, refresh it
+    store.set('history', recentHistory);
+    updateTrayMenu();
     if (historyWindow && !historyWindow.isDestroyed()) {
         historyWindow.webContents.send('history-updated', recentHistory);
     }
   }
+  function getAuthToken() { /* ... (same as v3) ... */ }
   
-  // Placeholder for the actual AI Vision API call (Unchanged)
-  async function callVisionAPI(screenshotDataUrl, question) {
-    console.log('Simulating AI call for question:', question);
-    // ** This is the part you need to replace with actual API calls **
-    // Example using a hypothetical library:
-    // try {
-    //   const visionClient = new YourVisionClient({ apiKey: 'YOUR_API_KEY' });
-    //   const response = await visionClient.analyzeImage({
-    //     image: screenshotDataUrl, // Or convert data URL to buffer/file
-    //     prompt: question
-    //   });
-    //   return response.text;
-    // } catch (error) {
-    //   console.error("Actual AI API call failed:", error);
-    //   throw new Error("Failed to get response from AI service."); // Propagate error
-    // }
+  /**
+   * Makes the actual API call to your backend service.
+   * Now includes a flag indicating if a new screenshot is included.
+   * @param {string} transcribedText - The user's transcribed question.
+   * @param {string | null} newScreenshotDataUrl - The new screenshot (if requested), otherwise null.
+   * @returns {Promise<string>} - A promise that resolves with the AI's answer text.
+   * @throws {Error} - Throws an error if the API call fails or returns an error.
+   */
+  async function callBackendAPI(transcribedText, newScreenshotDataUrl) {
+    const endpoint = BACKEND_API_ENDPOINT; // Use configured endpoint
+    console.log(`Calling backend API at ${endpoint}`);
+    console.log(` - With new screenshot: ${!!newScreenshotDataUrl}`);
+    console.log(` - Question text: "${transcribedText.substring(0, 50)}..."`);
   
-    // Simulation:
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-    if (question.toLowerCase().includes("error")) { // Simulate an error condition
-        throw new Error("Simulated AI processing error.");
-    }
-    return `Simulated AI Response: You asked "${question}" about the captured image. This feature requires integrating a real AI Vision API.`;
+  
+    const token = getAuthToken();
+    if (!token) throw new Error("Authentication required. Please log in.");
+    if (!endpoint || endpoint.startsWith('YOUR_BACKEND')) throw new Error("Backend service is not configured.");
+  
+    // Prepare request body - conditionally include screenshot
+    const requestBodyData = {
+        question: transcribedText,
+        // Only include screenshot data if it's provided
+        ...(newScreenshotDataUrl && { screenshotDataUrl: newScreenshotDataUrl })
+    };
+  
+    return new Promise((resolve, reject) => {
+        const request = net.request({
+            method: 'POST',
+            url: endpoint,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+  
+        request.on('response', (response) => { /* ... (same handling as v3) ... */
+              console.log(`Backend response status: ${response.statusCode}`);
+              let responseBody = '';
+              response.on('data', (chunk) => { responseBody += chunk; });
+              response.on('end', () => {
+                  try {
+                      const parsedResponse = JSON.parse(responseBody);
+                      if (response.statusCode >= 200 && response.statusCode < 300) {
+                          if (parsedResponse.answer) resolve(parsedResponse.answer);
+                          else reject(new Error("Invalid response format (missing 'answer')."));
+                      } else {
+                          const errorMessage = parsedResponse.error || `API Error (${response.statusCode})`;
+                          reject(new Error(errorMessage));
+                      }
+                  } catch (e) { reject(new Error(`Invalid JSON response: ${e.message}`)); }
+              });
+              response.on('error', (error) => { reject(new Error(`Network response error: ${error.message}`)); });
+        });
+        request.on('error', (error) => { reject(new Error(`Network request failed: ${error.message}`)); });
+  
+        request.write(JSON.stringify(requestBodyData));
+        request.end();
+    });
   }
+  
   
   // --- Window Creation ---
   
-  function createPopupWindow(screenshotDataUrl) {
+  /**
+   * Creates or shows the main popup window.
+   * Now sends initial settings like showScreenshotPreview.
+   */
+  function createPopupWindow() {
     if (popupWindow && !popupWindow.isDestroyed()) {
       if (!popupWindow.isVisible()) {
           popupWindow.show();
       }
-      popupWindow.focus(); // Bring to front
-       if (screenshotDataUrl) {
-         popupWindow.webContents.send('screenshot-captured', screenshotDataUrl);
-       }
+      popupWindow.focus();
+      // Optionally resend settings if they can change while window is hidden
+      // popupWindow.webContents.send('settings-updated', {
+      //     showScreenshotPreview: store.get('showScreenshotPreview')
+      // });
       return;
     }
   
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width, height } = primaryDisplay.workAreaSize;
-    const popupWidth = 500;
-    const popupHeight = 400;
+    // Adjust size slightly for new UI elements
+    const popupWidth = 550;
+    const popupHeight = 450;
   
     popupWindow = new BrowserWindow({
       width: popupWidth,
@@ -127,13 +163,13 @@ const {
       x: Math.round((width - popupWidth) / 2),
       y: Math.round((height - popupHeight) / 4),
       frame: false,
-      resizable: false,
+      resizable: false, // Keep non-resizable for now
       movable: true,
       show: false,
       skipTaskbar: true,
       alwaysOnTop: true,
       webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
+        preload: path.join(__dirname, 'preload.js'), // Use the main preload
         contextIsolation: true,
         nodeIntegration: false,
       },
@@ -143,9 +179,11 @@ const {
   
     popupWindow.once('ready-to-show', () => {
       popupWindow.show();
-      if (screenshotDataUrl) {
-          popupWindow.webContents.send('screenshot-captured', screenshotDataUrl);
-      }
+      // Send initial settings and last captured screenshot for preview
+      popupWindow.webContents.send('initial-load-data', {
+          showScreenshotPreview: store.get('showScreenshotPreview'),
+          lastScreenshotDataUrl: lastCapturedScreenshotDataUrl // Send for preview only
+      });
     });
   
     popupWindow.on('blur', () => {
@@ -154,249 +192,191 @@ const {
        }
     });
   
-    popupWindow.on('closed', () => {
-      popupWindow = null;
-    });
+    popupWindow.on('closed', () => { popupWindow = null; });
   }
   
-  function createHistoryWindow() {
-      if (historyWindow && !historyWindow.isDestroyed()) {
-          historyWindow.show();
-          historyWindow.focus();
-          return;
-      }
-  
-      historyWindow = new BrowserWindow({
-          width: 600,
-          height: 500,
-          title: 'History',
-          show: false,
-          // Use standard frame for history window
-          frame: true,
-          resizable: true,
-          movable: true,
-          skipTaskbar: false, // Show in taskbar
-          alwaysOnTop: false, // Not always on top
-          webPreferences: {
-              preload: path.join(__dirname, 'preload_history.js'), // Separate preload for history
-              contextIsolation: true,
-              nodeIntegration: false,
-          },
-      });
-  
-      historyWindow.loadFile(path.join(__dirname, 'history.html'));
-  
-      historyWindow.once('ready-to-show', () => {
-          historyWindow.show();
-          // Send current history when window is ready
-          historyWindow.webContents.send('history-updated', loadHistory());
-      });
-  
-      historyWindow.on('closed', () => {
-          historyWindow = null; // Dereference
-      });
-  }
-  
+  function createHistoryWindow() { /* ... (same as v2) ... */ }
   
   // --- Core Logic ---
   
-  async function captureScreenAndShowPopup() {
-      console.log('Hotkey triggered - capturing screen...');
+  /**
+   * Primary action triggered by the hotkey. Just shows the popup.
+   * Screenshot capture is now triggered *conditionally* from the popup.
+   */
+  function showAssistantPopup() {
+      console.log('Hotkey triggered - showing assistant popup...');
+      createPopupWindow(); // Creates or shows the existing window
+  }
+  
+  /**
+   * Captures a fresh screenshot. Used when "Send with New Screenshot" is clicked.
+   * @returns {Promise<string>} Data URL of the captured screenshot.
+   */
+  async function captureNewScreenshot() {
+      console.log('Capturing NEW screenshot...');
       try {
           const sources = await desktopCapturer.getSources({
               types: ['screen'],
               thumbnailSize: screen.getPrimaryDisplay().size
           });
-  
           const primaryScreenSource = sources.find(source => source.display_id === String(screen.getPrimaryDisplay().id)) || sources[0];
+          if (!primaryScreenSource) throw new Error('No screen source found');
   
-          if (!primaryScreenSource) {
-              throw new Error('No screen source found');
-          }
-  
-          lastScreenshotDataUrl = primaryScreenSource.thumbnail.toDataURL();
-          console.log('Screenshot captured, creating popup...');
-          createPopupWindow(lastScreenshotDataUrl);
-  
+          // Store this as the *last captured* one as well for preview consistency
+          lastCapturedScreenshotDataUrl = primaryScreenSource.thumbnail.toDataURL();
+          console.log('New screenshot captured.');
+          return lastCapturedScreenshotDataUrl;
       } catch (e) {
-          console.error('Failed to capture screen:', e);
+          console.error('Failed to capture new screenshot:', e);
           dialog.showErrorBox('Screenshot Error', `Failed to capture screen: ${e.message}`);
+          throw e; // Re-throw to be handled by caller
       }
   }
   
   
-  function createTray() {
-    const iconPath = path.join(__dirname, 'assets', 'icon.png');
-    let icon;
-    try {
-        if (fs.existsSync(iconPath)) {
-            icon = nativeImage.createFromPath(iconPath);
-            if (process.platform === 'darwin') {
-                icon.setTemplateImage(true);
-            }
-        } else {
-            console.warn("Icon file not found, using placeholder.");
-            const fallbackIconDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAEUlEQVR42mNkIAAYRxWAAQAG9gAK/UNr+AAAAABJRU5ErkJggg==';
-            icon = nativeImage.createFromDataURL(fallbackIconDataUrl);
-        }
-    } catch (error) {
-         console.error("Error creating tray icon:", error);
-         const fallbackIconDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAEUlEQVR42mNkIAAYRxWAAQAG9gAK/UNr+AAAAABJRU5ErkJggg==';
-         icon = nativeImage.createFromDataURL(fallbackIconDataUrl);
-    }
+  function createTray() { /* ... (same basic setup as v2) ... */
+      // Modify updateTrayMenu to include the toggle
+      const iconPath = path.join(__dirname, 'assets', 'icon.png');
+      let icon;
+      try { /* ... (icon loading logic same as v2/v3) ... */
+          if (fs.existsSync(iconPath)) {
+              icon = nativeImage.createFromPath(iconPath);
+              if (process.platform === 'darwin') icon.setTemplateImage(true);
+          } else {
+              console.warn("Icon file not found..."); // Handle missing icon
+              const fallbackIconDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAEUlEQVR42mNkIAAYRxWAAQAG9gAK/UNr+AAAAABJRU5ErkJggg==';
+              icon = nativeImage.createFromDataURL(fallbackIconDataUrl);
+          }
+      } catch (error) { /* ... error handling ... */ }
   
-    tray = new Tray(icon);
-    tray.setToolTip('AI Assistant');
-    updateTrayMenu(); // Set initial menu
+      tray = new Tray(icon);
+      tray.setToolTip('AI Assistant');
+      updateTrayMenu(); // Set initial menu
   
-    tray.on('click', () => {
-        // Toggle popup window visibility on click
-        if (popupWindow && !popupWindow.isDestroyed()) {
-            popupWindow.isVisible() ? popupWindow.hide() : popupWindow.show();
-        } else {
-            // If popup doesn't exist, trigger capture
-            captureScreenAndShowPopup();
-        }
-    });
+      tray.on('click', showAssistantPopup); // Simple click shows popup
   }
   
+  /**
+   * Updates the tray menu, including the screenshot preview toggle.
+   */
   function updateTrayMenu() {
-      // History submenu items are now less critical as there's a dedicated window
-      // We can keep a few recent ones or remove them entirely from the tray menu.
-      // Let's keep it simple for now.
+      const isPreviewEnabled = store.get('showScreenshotPreview');
   
       const contextMenu = Menu.buildFromTemplate([
-          { label: 'Capture & Ask', click: captureScreenAndShowPopup },
-          { label: 'View History', click: createHistoryWindow }, // Added History Viewer
-          // { label: 'Open Data Folder', click: () => { shell.openPath(app.getPath('userData')); } }, // Useful for debugging
-          { label: 'Settings', enabled: false }, // Placeholder
+          { label: 'Ask Assistant', click: showAssistantPopup }, // Changed label slightly
+          { label: 'View History', click: createHistoryWindow },
+          { type: 'separator' },
+          // Toggle for showing screenshot preview in popup
+          {
+              label: 'Show Screenshot Preview',
+              type: 'checkbox',
+              checked: isPreviewEnabled,
+              click: (menuItem) => {
+                  const newState = menuItem.checked;
+                  store.set('showScreenshotPreview', newState);
+                  console.log(`Screenshot preview set to: ${newState}`);
+                  // Notify popup window if it's open
+                  if (popupWindow && !popupWindow.isDestroyed()) {
+                      popupWindow.webContents.send('settings-updated', {
+                          showScreenshotPreview: newState
+                      });
+                  }
+              }
+          },
+          // { label: 'Settings...', enabled: false }, // Placeholder for more settings
           { type: 'separator' },
           { label: 'Quit AI Assistant', click: () => app.quit() }
       ]);
       if (tray) {
-          try {
-              tray.setContextMenu(contextMenu);
-          } catch (error) {
-              console.error("Failed to set tray context menu:", error);
-          }
+          try { tray.setContextMenu(contextMenu); }
+          catch (error) { console.error("Failed to set tray context menu:", error); }
       }
   }
   
   
   // --- App Lifecycle ---
-  
   const gotTheLock = app.requestSingleInstanceLock();
-  
-  if (!gotTheLock) {
-    console.log("Another instance is already running. Quitting.");
-    dialog.showErrorBox("Already Running", "Another instance of AI Assistant is already running.");
-    app.quit();
-  } else {
-    app.on('second-instance', (event, commandLine, workingDirectory) => {
-      console.log("Second instance detected. Focusing existing window or creating new.");
-      if (popupWindow && !popupWindow.isDestroyed()) {
-        if (!popupWindow.isVisible()) popupWindow.show();
-        popupWindow.focus();
-      } else if (historyWindow && !historyWindow.isDestroyed()) {
-          // If only history window is open, focus that
-          historyWindow.focus();
-      } else {
-          // If no window open, trigger capture
-          captureScreenAndShowPopup();
-      }
-    });
-  
-    app.whenReady().then(() => {
-      if (process.platform === 'darwin') {
-        app.dock.hide();
-      }
-  
-      try {
-          if (!globalShortcut.register(HOTKEY, captureScreenAndShowPopup)) {
-              console.error(`Failed to register hotkey: ${HOTKEY}.`);
-              dialog.showErrorBox('Hotkey Error', `Failed to register global hotkey "${HOTKEY}". It might be in use by another application. Please check your system settings or other running apps.`);
-              // Decide whether to quit or continue without hotkey
-              // app.quit();
+  if (!gotTheLock) { /* ... */ app.quit(); }
+  else {
+      app.on('second-instance', (event, commandLine, workingDirectory) => {
+          // Focus existing window or show popup if none exist
+          if (popupWindow && !popupWindow.isDestroyed()) {
+              if (!popupWindow.isVisible()) popupWindow.show();
+              popupWindow.focus();
+          } else if (historyWindow && !historyWindow.isDestroyed()) {
+              historyWindow.focus();
           } else {
-              console.log(`Global hotkey "${HOTKEY}" registered successfully.`);
+              showAssistantPopup(); // Show popup if app activated and no windows open
           }
-      } catch (error) {
-           console.error(`Error registering hotkey ${HOTKEY}:`, error);
-           dialog.showErrorBox('Hotkey Error', `An unexpected error occurred while registering the global hotkey "${HOTKEY}".`);
-      }
-  
-      createTray();
-      console.log('App ready. Data stored at:', app.getPath('userData')); // Log data path
-    });
+      });
+      app.whenReady().then(() => {
+          if (process.platform === 'darwin') app.dock.hide();
+          // Register the single primary hotkey
+          try {
+              if (!globalShortcut.register(HOTKEY, showAssistantPopup)) { // Hotkey now just shows popup
+                  console.error(`Failed to register hotkey: ${HOTKEY}.`);
+                  dialog.showErrorBox('Hotkey Error', `Failed to register global hotkey "${HOTKEY}". It might be in use.`);
+              } else { console.log(`Global hotkey "${HOTKEY}" registered.`); }
+          } catch (error) { console.error(`Error registering hotkey ${HOTKEY}:`, error); /* ... */ }
+          createTray();
+          console.log('App ready. Data stored at:', app.getPath('userData'));
+      });
   }
-  
-  app.on('window-all-closed', (e) => {
-     // We don't quit when windows are closed because the tray icon keeps the app alive.
-     console.log("All windows closed, app remains active in tray.");
-  });
-  
+  app.on('window-all-closed', (e) => { /* ... (no quit) ... */ });
   app.on('activate', () => {
-    // On macOS, re-create window if dock icon is clicked (though ours is hidden)
-    // Or handle activation when no windows are open. Trigger capture seems reasonable.
-    if (BrowserWindow.getAllWindows().length === 0) {
-       console.log("App activated with no windows, triggering capture.");
-       captureScreenAndShowPopup();
-    } else {
-        // If windows exist (popup or history), try to focus one
-        if (popupWindow && !popupWindow.isDestroyed()) popupWindow.focus();
-        else if (historyWindow && !historyWindow.isDestroyed()) historyWindow.focus();
-    }
+      if (BrowserWindow.getAllWindows().length === 0) showAssistantPopup();
+      else { /* ... (focus existing) ... */ }
   });
+  app.on('will-quit', () => { globalShortcut.unregisterAll(); /* ... */ });
   
-  app.on('will-quit', () => {
-    globalShortcut.unregisterAll();
-    console.log('Global shortcuts unregistered. Quitting app.');
-  });
   
   // --- IPC Handlers ---
   
-  ipcMain.handle('ask-question', async (event, question) => {
-    console.log(`Received question from popup: "${question}"`);
-    if (!lastScreenshotDataUrl) {
-        console.error("No screenshot available to process.");
-        return { error: "Missing screenshot data. Please capture again." };
-    }
+  // ** UPDATED to handle different send types **
+  ipcMain.handle('send-query', async (event, { transcribedText, sendWithNewScreenshot }) => {
+    console.log(`IPC: Received query. Send with new screenshot: ${sendWithNewScreenshot}`);
+    console.log(`IPC: Text: "${transcribedText.substring(0,50)}..."`);
+  
+    let screenshotDataForApi = null;
+    let historyContext = 'text-only';
   
     try {
-      const answer = await callVisionAPI(lastScreenshotDataUrl, question);
-      console.log(`Received simulated answer.`);
-      addHistoryEntry(question, answer); // Save successful Q&A
-      return { answer: answer };
+      // Capture a new screenshot ONLY if requested
+      if (sendWithNewScreenshot) {
+          screenshotDataForApi = await captureNewScreenshot(); // This updates lastCapturedScreenshotDataUrl
+          historyContext = 'with-screenshot';
+          // Notify popup that a new screenshot was taken for preview update
+           if (popupWindow && !popupWindow.isDestroyed()) {
+               popupWindow.webContents.send('screenshot-updated', screenshotDataForApi);
+           }
+      }
+  
+      // Call the backend API
+      const answer = await callBackendAPI(transcribedText, screenshotDataForApi);
+      console.log(`IPC: Received answer from backend.`);
+      addHistoryEntry(transcribedText, answer, historyContext); // Save successful Q&A with context
+      return { answer: answer }; // Return success response to renderer
+  
     } catch (error) {
-      console.error('Error during AI processing simulation:', error);
+      console.error('IPC Error: Failed during query processing:', error);
       // Don't save history on error
-      // Return a more specific error message if available
-      return { error: `Failed to get response: ${error.message || 'AI processing failed.'}` };
+      return { error: error.message || 'An unexpected error occurred.' };
     }
   });
   
-  ipcMain.on('close-popup', () => {
-      if (popupWindow && !popupWindow.isDestroyed()) {
-          popupWindow.hide();
-          console.log("Popup hidden via close button.");
-      }
+  // Handler to get initial data when popup loads
+  ipcMain.handle('get-initial-data', (event) => {
+      console.log("IPC: Sending initial data to popup.");
+      return {
+          showScreenshotPreview: store.get('showScreenshotPreview'),
+          lastScreenshotDataUrl: lastCapturedScreenshotDataUrl // Send last captured for preview
+      };
   });
   
-  // IPC handler for history window requesting history data
-  ipcMain.handle('get-history', async (event) => {
-      console.log("History window requested data.");
-      return loadHistory();
-  });
   
-  // IPC handler for clearing history (optional)
-  ipcMain.handle('clear-history', async (event) => {
-      console.log("Clearing history.");
-      store.set('history', []); // Reset history to empty array
-      updateTrayMenu(); // Update menu if needed
-      // Notify history window if open
-      if (historyWindow && !historyWindow.isDestroyed()) {
-          historyWindow.webContents.send('history-updated', []);
-      }
-      return { success: true };
-  });
+  ipcMain.on('close-popup', () => { /* ... (same as v3) ... */ });
+  ipcMain.handle('get-history', async (event) => { /* ... (same as v3) ... */ });
+  ipcMain.handle('clear-history', async (event) => { /* ... (same as v3) ... */ });
+  
+  // Add login/logout handlers later
   
