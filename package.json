@@ -1,7 +1,7 @@
 {
-    "name": "ai-screenshot-assistant",
+    "name": "ask-ai",
     "version": "0.1.0",
-    "description": "Hotkey triggered AI assistant for screenshots with voice input",
+    "description": "Hotkey triggered ask.ai for screenshots with voice input",
     "main": "main.js",
     "scripts": {
       "start": "electron .",

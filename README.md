@@ -1,6 +1,6 @@
-# Blink
+# ask.ai
 
-Answers in a Blink.
+Answers in an instant.
 
 A desktop application built with Electron that provides an AI-powered screenshot assistant with voice input capabilities. This tool allows you to capture screenshots and get AI-powered insights about them using voice commands and hotkeys.
 
@@ -30,8 +30,8 @@ A desktop application built with Electron that provides an AI-powered screenshot
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/0xLoqi/Blink.git
-cd Blink
+git clone https://github.com/0xLoqi/ask.ai.git
+cd ask.ai
 ```
 
 2. Install dependencies:

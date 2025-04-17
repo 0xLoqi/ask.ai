@@ -1,63 +1,51 @@
-// preload.js (v2)
-// Exposes IPC channels needed for the voice input flow.
+// preload.js (v3)
+// Exposes IPC channels needed for renderer-driven streaming flow.
 
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Whitelist of valid channels for IPC communication
-const validSendChannels = ['close-popup']; // One-way: Renderer -> Main
+const validSendChannels = [ // One-way: Renderer -> Main
+    'close-popup',
+    'query-complete' // For renderer to notify main when stream is done
+];
 const validInvokeChannels = [ // Two-way: Renderer -> Main -> Renderer
-    'send-query',
+    'get-auth-token',
+    'capture-new-screenshot',
     'get-initial-data'
     // Add login/logout invokes later
 ];
 const validOnChannels = [ // Main -> Renderer
     'settings-updated',
-    'screenshot-updated', // For when main captures a new screenshot
-    // Add others if needed, e.g., 'login-status-changed'
+    'screenshot-updated',
 ];
 
 console.log('Preload script executing...');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Send: Renderer -> Main (one-way)
   send: (channel, data) => {
     if (validSendChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
-    } else {
-      console.warn(`Preload: Invalid send channel attempted: ${channel}`);
-    }
+    } else { /* ... warning ... */ }
   },
-  // Invoke: Renderer -> Main -> Renderer (two-way)
   invoke: async (channel, ...args) => {
     if (validInvokeChannels.includes(channel)) {
       console.log(`Preload: Invoking channel "${channel}"`);
-      try {
-          return await ipcRenderer.invoke(channel, ...args);
-      } catch (error) {
-           console.error(`Preload: Error invoking channel "${channel}":`, error);
-           throw error; // Re-throw error
-      }
-    } else {
-      console.warn(`Preload: Invalid invoke channel attempted: ${channel}`);
-      throw new Error(`Invalid invoke channel: ${channel}`);
-    }
+      try { return await ipcRenderer.invoke(channel, ...args); }
+      catch (error) { /* ... error handling ... */ throw error; }
+    } else { /* ... warning ... */ throw new Error(`Invalid invoke channel: ${channel}`); }
   },
-  // On: Main -> Renderer
   on: (channel, func) => {
     if (validOnChannels.includes(channel)) {
       const listener = (event, ...args) => func(...args);
-      console.log(`Preload: Registering listener for channel "${channel}"`);
       ipcRenderer.on(channel, listener);
-      // Return function to remove listener
-      return () => {
-         console.log(`Preload: Removing listener for channel "${channel}"`);
-         ipcRenderer.removeListener(channel, listener);
-      };
-    } else {
-      console.warn(`Preload: Invalid 'on' channel attempted: ${channel}`);
-      return () => {}; // No-op function
-    }
+      return () => { ipcRenderer.removeListener(channel, listener); };
+    } else { /* ... warning ... */ return () => {}; }
   },
+  // Expose backend URL directly (alternative to getting it via get-initial-data)
+  // This assumes the backend URL is relatively static during the app's runtime.
+  // Note: This might expose the URL slightly more, but it's generally needed by the client anyway.
+  // If the URL needs to be dynamic, getting it via IPC is better.
+  // getBackendUrl: () => process.env.BACKEND_API_ENDPOINT || 'http://localhost:3000' // Example if main set it as env var
 });
 
 console.log('Preload script finished execution. electronAPI exposed.');
