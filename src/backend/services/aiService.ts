@@ -1,6 +1,8 @@
 // services/aiService.js (v4) - Enable Streaming from OpenAI
 
-const OpenAI = require('openai');
+// @ts-ignore
+import OpenAI from 'openai';
+const OpenAIAny: any = OpenAI;
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -8,16 +10,16 @@ if (!apiKey) {
   throw new Error("FATAL ERROR: OPENAI_API_KEY environment variable is not set.");
 }
 
-const openai = new OpenAI({ apiKey: apiKey });
+const openai = new OpenAIAny({ apiKey: apiKey });
 
 // --- Speech-to-Text (Placeholder) ---
-async function transcribeAudio(audioData) {
+export async function transcribeAudio(audioData: any): Promise<string> {
   console.warn("AI Service: transcribeAudio function not implemented.");
   return "Placeholder: Audio transcription not implemented.";
 }
 
 // --- Vision Model Call (Streaming) ---
-async function getVisionResponseStream(text, imageUrl, userId) { // Renamed slightly for clarity
+export async function getVisionResponseStream(text: string, imageUrl: string, userId: string): Promise<any> {
   console.log(`AI Service: Requesting VISION stream for user ${userId}...`);
   try {
     // Request a stream instead of waiting for the full response
@@ -41,7 +43,7 @@ async function getVisionResponseStream(text, imageUrl, userId) { // Renamed slig
     });
     console.log("AI Service: Vision stream initiated.");
     return stream; // Return the stream object directly
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error initiating OpenAI Vision stream:", error.message);
     // Handle specific API errors if needed
     if (error.response) {
@@ -55,7 +57,7 @@ async function getVisionResponseStream(text, imageUrl, userId) { // Renamed slig
 }
 
 // --- Language Model Call (Streaming) ---
-async function getLanguageResponseStream(text, userId) { // Renamed slightly for clarity
+export async function getLanguageResponseStream(text: string, userId: string): Promise<any> {
   console.log(`AI Service: Requesting LANGUAGE stream for user ${userId}...`);
   try {
     // Request a stream
@@ -71,7 +73,7 @@ async function getLanguageResponseStream(text, userId) { // Renamed slightly for
     });
     console.log("AI Service: Language stream initiated.");
     return stream; // Return the stream object directly
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error initiating OpenAI Language stream:", error.message);
      if (error.response) {
         console.error("API Error Details:", error.response.data);
@@ -82,9 +84,3 @@ async function getLanguageResponseStream(text, userId) { // Renamed slightly for
     }
   }
 }
-
-module.exports = {
-  transcribeAudio, // Still placeholder
-  getVisionResponseStream, // Export streaming version
-  getLanguageResponseStream, // Export streaming version
-};

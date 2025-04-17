@@ -1,22 +1,26 @@
 // routes/apiRoutes.js (v2) - Handles streaming response back to client
 
-const express = require('express');
-const authenticateToken = require('../middleware/authMiddleware');
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
+import authenticateToken from '../middleware/authMiddleware';
 // Import the streaming functions from aiService
-const { getVisionResponseStream, getLanguageResponseStream } = require('../services/aiService');
+import { getVisionResponseStream, getLanguageResponseStream } from '../services/aiService';
+// TODO: Replace with actual import from zod schema
+// import type { AskPayload } from '../shared/schemas';
+type AskPayload = { question: string; screenshotDataUrl?: string };
 
 const router = express.Router();
 
 // --- Protected '/ask' Endpoint (Streaming) ---
-router.post('/ask', authenticateToken, async (req, res, next) => {
-  const userId = req.user.id;
+const askHandler: RequestHandler<{}, any, AskPayload> = async (req, res, next) => {
+  const userId = (req as any).user.id;
   console.log(`Received /ask request from user ID: ${userId}`);
 
   try {
     const { question, screenshotDataUrl } = req.body;
 
     if (!question || typeof question !== 'string' || question.trim() === '') {
-      return res.status(400).json({ error: 'Question text is required.' });
+      res.status(400).json({ error: 'Question text is required.' });
+      return;
     }
 
     // --- TODO: Add Speech-to-Text logic here if needed ---
@@ -33,7 +37,8 @@ router.post('/ask', authenticateToken, async (req, res, next) => {
     // Get the appropriate stream from the AI service
     if (screenshotDataUrl) {
       if (typeof screenshotDataUrl !== 'string' || !screenshotDataUrl.startsWith('data:image/')) {
-        return res.status(400).json({ error: 'Invalid screenshot data format.' }); // Should ideally not happen with SSE headers set, but good practice
+        res.status(400).json({ error: 'Invalid screenshot data format.' });
+        return;
       }
       console.log("API Route: Getting vision stream...");
       stream = await getVisionResponseStream(transcribedText, screenshotDataUrl, userId);
@@ -75,8 +80,8 @@ router.post('/ask', authenticateToken, async (req, res, next) => {
     // Or maybe we accumulate 'fullResponse' and save it here.
     // For now, history saving is removed from this immediate flow.
 
-  } catch (error) {
-    console.error(`Error processing /ask stream request for user ${req.user?.id}:`, error);
+  } catch (error: any) {
+    console.error(`Error processing /ask stream request for user ${(req as any).user?.id}:`, error);
     // If headers haven't been sent, we can send a normal error response
     if (!res.headersSent) {
         next(error); // Pass to error handler
@@ -92,6 +97,8 @@ router.post('/ask', authenticateToken, async (req, res, next) => {
         res.end(); // Ensure the connection is closed
     }
   }
-});
+};
 
-module.exports = router;
+router.post('/ask', authenticateToken as RequestHandler, askHandler);
+
+export default router;

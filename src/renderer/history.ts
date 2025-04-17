@@ -6,26 +6,24 @@ const loadingText = document.getElementById('loading-history');
 const refreshButton = document.getElementById('refresh-button');
 const clearButton = document.getElementById('clear-button');
 
-// Store the function to remove the listener
-let removeHistoryUpdateListener = null;
+let removeHistoryUpdateListener: any = null;
 
 /**
  * Formats an ISO timestamp into a more readable string.
  * @param {string} isoString - The ISO timestamp string.
  * @returns {string} - Formatted date/time string.
  */
-function formatTimestamp(isoString) {
+function formatTimestamp(isoString: any) {
     try {
         const date = new Date(isoString);
-        // Adjust options as needed for desired format
-        const options = {
+        const options: Intl.DateTimeFormatOptions = {
             year: 'numeric', month: 'short', day: 'numeric',
             hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
         };
-        return date.toLocaleString(undefined, options); // Use user's locale
+        return date.toLocaleString(undefined, options);
     } catch (e) {
         console.error("Error formatting timestamp:", e);
-        return isoString; // Fallback to original string
+        return isoString;
     }
 }
 
@@ -33,7 +31,8 @@ function formatTimestamp(isoString) {
  * Renders the history items in the list div.
  * @param {Array} history - Array of history objects.
  */
-function renderHistory(history) {
+function renderHistory(history: any) {
+    if (!historyListDiv) return;
     console.log("Rendering history:", history);
     // Clear previous content
     historyListDiv.innerHTML = '';
@@ -47,7 +46,7 @@ function renderHistory(history) {
     }
 
     // Reverse history to show most recent first
-    history.slice().reverse().forEach(item => {
+    history.slice().reverse().forEach((item: any) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'history-item';
 
@@ -77,16 +76,17 @@ function renderHistory(history) {
  * Fetches and renders the history data.
  */
 async function loadAndRenderHistory() {
+    if (!loadingText || !historyListDiv) return;
     loadingText.style.display = 'block'; // Show loading text
     historyListDiv.innerHTML = ''; // Clear previous list
     historyListDiv.appendChild(loadingText);
 
     try {
         console.log("Requesting history data from main process...");
-        const history = await window.historyAPI.invoke('get-history');
+        const history = await (window as any).historyAPI.invoke('get-history');
         loadingText.style.display = 'none'; // Hide loading text
         renderHistory(history);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching history:", error);
         loadingText.style.display = 'none'; // Hide loading text
         historyListDiv.innerHTML = '<p class="empty-history">Error loading history. Please try refreshing.</p>';
@@ -103,14 +103,14 @@ async function handleClearHistory() {
     if (confirmed) {
         console.log("Requesting to clear history...");
         try {
-            const result = await window.historyAPI.invoke('clear-history');
+            const result = await (window as any).historyAPI.invoke('clear-history');
             if (result.success) {
                 console.log("History cleared successfully.");
                 renderHistory([]); // Re-render with empty list immediately
             } else {
                  alert("Failed to clear history.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error clearing history:", error);
             alert(`Error clearing history: ${error.message}`);
         }
@@ -131,12 +131,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (removeHistoryUpdateListener) {
         removeHistoryUpdateListener(); // Remove old listener if exists
     }
-    removeHistoryUpdateListener = window.historyAPI.on('history-updated', (updatedHistory) => {
+    removeHistoryUpdateListener = (window as any).historyAPI.on('history-updated', (updatedHistory: any) => {
         console.log("Received history-updated event from main process.");
         renderHistory(updatedHistory);
     });
 
     // Add listeners for buttons
+    if (!refreshButton || !clearButton) return;
     refreshButton.addEventListener('click', loadAndRenderHistory);
     clearButton.addEventListener('click', handleClearHistory);
 });

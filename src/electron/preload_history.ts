@@ -1,7 +1,7 @@
 // preload_history.js
 // Exposes specific Electron/Node APIs to the history renderer process securely.
 
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
 
 // Whitelist of valid channels for history window communication
 const validInvokeChannels = ['get-history', 'clear-history'];
@@ -11,7 +11,7 @@ console.log('Preload script for HISTORY window executing...');
 
 contextBridge.exposeInMainWorld('historyAPI', {
   // Invoke: Renderer -> Main -> Renderer (two-way)
-  invoke: async (channel, ...args) => {
+  invoke: async (channel: any, ...args: any[]) => {
     if (validInvokeChannels.includes(channel)) {
       console.log(`History Preload: Invoking channel "${channel}"`);
       try {
@@ -28,9 +28,9 @@ contextBridge.exposeInMainWorld('historyAPI', {
     }
   },
   // On: Main -> Renderer
-  on: (channel, func) => {
+  on: (channel: any, func: any) => {
     if (validOnChannels.includes(channel)) {
-      const listener = (event, ...args) => func(...args);
+      const listener = (event: any, ...args: any[]) => func(...args);
       console.log(`History Preload: Registering listener for channel "${channel}"`);
       ipcRenderer.on(channel, listener);
       // Return a function to remove this specific listener

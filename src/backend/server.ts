@@ -1,14 +1,12 @@
 // server.js - Main backend server setup
 
-// Load environment variables from .env file
-require('dotenv').config();
-
-const express = require('express');
-const cors = require('cors');
+import 'dotenv/config';
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
 
 // Import route handlers
-const authRoutes = require('./routes/authRoutes');
-const apiRoutes = require('./routes/apiRoutes');
+import authRoutes from './routes/authRoutes';
+import apiRoutes from './routes/apiRoutes';
 
 // Create the Express app
 const app = express();
@@ -31,13 +29,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
 
 // Basic root route (optional)
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('AI Assistant Backend is running!');
 });
 
 // --- Error Handling Middleware (Basic Example) ---
 // Add more robust error handling later
-app.use((err, req, res, next) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error("Unhandled Error:", err.stack || err);
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error'

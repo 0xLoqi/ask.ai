@@ -1,10 +1,11 @@
 // middleware/authMiddleware.js - Verifies JWT token
 
-const jwt = require('jsonwebtoken');
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-function authenticateToken(req, res, next) {
+function authenticateToken(req: Request, res: Response, next: NextFunction) {
   // Get token from the Authorization header (format: "Bearer TOKEN")
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -21,7 +22,7 @@ function authenticateToken(req, res, next) {
   }
 
   // Verify the token
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
     if (err) {
       console.log("Auth middleware: Token verification failed.", err.message);
       // Use 403 Forbidden if token is invalid or expired
@@ -31,10 +32,10 @@ function authenticateToken(req, res, next) {
     // Token is valid, attach user payload to the request object
     // The 'user' object here contains whatever payload you put in the JWT when signing
     // Typically includes user ID, possibly username/email
-    req.user = user;
+    (req as any).user = user;
     console.log("Auth middleware: Token verified successfully for user:", user.id || user.username || 'Unknown User'); // Log user identifier if available
     next(); // Proceed to the next middleware or route handler
   });
 }
 
-module.exports = authenticateToken;
+export default authenticateToken;

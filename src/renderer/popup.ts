@@ -1,7 +1,7 @@
 // preload.js (v3)
 // Exposes IPC channels needed for renderer-driven streaming flow.
 
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
 
 // Whitelist of valid channels for IPC communication
 const validSendChannels = [ // One-way: Renderer -> Main
@@ -22,21 +22,21 @@ const validOnChannels = [ // Main -> Renderer
 console.log('Preload script executing...');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  send: (channel, data) => {
+  send: (channel: any, data: any) => {
     if (validSendChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     } else { /* ... warning ... */ }
   },
-  invoke: async (channel, ...args) => {
+  invoke: async (channel: any, ...args: any[]) => {
     if (validInvokeChannels.includes(channel)) {
       console.log(`Preload: Invoking channel "${channel}"`);
       try { return await ipcRenderer.invoke(channel, ...args); }
       catch (error) { /* ... error handling ... */ throw error; }
     } else { /* ... warning ... */ throw new Error(`Invalid invoke channel: ${channel}`); }
   },
-  on: (channel, func) => {
+  on: (channel: any, func: any) => {
     if (validOnChannels.includes(channel)) {
-      const listener = (event, ...args) => func(...args);
+      const listener = (event: any, ...args: any[]) => func(...args);
       ipcRenderer.on(channel, listener);
       return () => { ipcRenderer.removeListener(channel, listener); };
     } else { /* ... warning ... */ return () => {}; }

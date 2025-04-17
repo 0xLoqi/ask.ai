@@ -1,8 +1,8 @@
 // routes/authRoutes.js (v2) - Implemented Registration & Login Logic
 
-const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import express, { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -11,11 +11,11 @@ const SALT_ROUNDS = 10; // Standard cost factor for bcrypt
 
 // !!! WARNING: In-memory storage is for DEMO/TESTING ONLY !!!
 // Replace with a proper database (e.g., PostgreSQL, MongoDB) for production.
-const users = []; // Example: [{ id: 1, email: 'test@example.com', passwordHash: '$2b$10$...' }]
+const users: any[] = []; // Example: [{ id: 1, email: 'test@example.com', passwordHash: '$2b$10$...' }]
 let userIdCounter = 1;
 
 // --- Registration Endpoint ---
-router.post('/register', async (req, res, next) => {
+router.post('/register', (async (req: any, res: any, next: any) => {
   try {
     const { email, password } = req.body;
 
@@ -66,10 +66,10 @@ router.post('/register', async (req, res, next) => {
     // Pass error to the central error handler in server.js
     next(new Error('Failed to register user due to a server error.'));
   }
-});
+}) as any);
 
 // --- Login Endpoint ---
-router.post('/login', async (req, res, next) => {
+router.post('/login', (async (req: any, res: any, next: any) => {
   try {
     const { email, password } = req.body;
 
@@ -132,6 +132,6 @@ router.post('/login', async (req, res, next) => {
     console.error("Login Error:", error);
     next(new Error('Login failed due to a server error.'));
   }
-});
+}) as any);
 
-module.exports = router;
+export default router;
