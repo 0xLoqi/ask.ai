@@ -53,7 +53,7 @@ When a task is complete, change `- [ ]` → `- [x]`.
 - [ ] Add `PRIVACY.md` section in README:
       - Screenshots & audio auto‑deleted after **24 h**.
       - "We do not sell user data."  Link to OpenAI data policy.
-- [ ] Update landing copy: "Ask anything—type or talk, anywhere, anytime."
+- [ ] Update landing copy: "Ask anything, anywhere, anytime."
 
 ---
 
