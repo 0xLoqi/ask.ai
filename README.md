@@ -1,8 +1,15 @@
-# <img src="assets/logo/ask.ai.png" alt="ask.ai logo" width="64" style="vertical-align:middle;"> ask.ai
-
-**Ask anything, anywhere, anytime.**
-
-> _The AI assistant that's always a hotkey away—type or talk, snap a screenshot, and get instant answers. All on your desktop._
+<div align="center">
+  <img src="assets/logo/ask.ai.png" alt="ask.ai logo" width="120"><br>
+  <span style="font-size:2.5rem; font-weight:700; letter-spacing:-2px;">ask.ai</span>
+  <br>
+  <span style="font-size:1.35rem; font-weight:600; color:#0d6efd; display:inline-block; margin-top:8px;">
+    Ask anything, anywhere, anytime.
+  </span>
+  <br>
+  <em style="color:#666; display:inline-block; margin-top:8px;">
+    The AI assistant that's always a hotkey away—type or talk, snap a screenshot, and get instant answers. All on your desktop.
+  </em>
+</div>
 
 ---
 
