@@ -117,6 +117,38 @@ async function handleClearHistory() {
     }
 }
 
+// --- Global Error Handling ---
+window.onerror = function (message, source, lineno, colno, error) {
+  try {
+    fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: error && error.stack ? error.stack : String(message),
+        source: 'renderer',
+        timestamp: new Date().toISOString(),
+      }),
+    });
+  } catch (e) {
+    // fallback: log to console
+    console.error('[GlobalError] Failed to POST error:', e);
+  }
+};
+window.onunhandledrejection = function (event) {
+  try {
+    fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: event.reason && event.reason.stack ? event.reason.stack : String(event.reason),
+        source: 'renderer',
+        timestamp: new Date().toISOString(),
+      }),
+    });
+  } catch (e) {
+    console.error('[GlobalError] Failed to POST error:', e);
+  }
+};
 
 // --- Event Listeners ---
 

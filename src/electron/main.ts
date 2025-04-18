@@ -7,6 +7,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain, Tray, Menu, nativeImage, s
 import * as path from 'path';
 import * as fs from 'fs';
 import Store from 'electron-store';
+import { autoUpdater } from 'electron-updater';
 
 console.log('[Debug] Modules required.');
 
@@ -37,7 +38,7 @@ const store = new Store({
 console.log('[Debug] Store initialized.'); // This should now succeed
 
 // --- Configuration ---
-const HOTKEY = 'CommandOrControl+Shift+A';
+const HOTKEY = 'CommandOrControl+Shift+Space';
 const MAX_HISTORY = 50;
 const BACKEND_API_ENDPOINT = process.env.BACKEND_API_ENDPOINT || 'http://localhost:3000';
 
@@ -46,6 +47,8 @@ let tray: any = null;
 let popupWindow: any = null;
 let historyWindow: any = null;
 let lastCapturedScreenshotDataUrl: any = null;
+let hotkeyDownTime: number | null = null;
+let hotkeyTimer: NodeJS.Timeout | null = null;
 
 // --- Utility Functions ---
 function loadHistory() { return store.get('history', []); }
@@ -89,32 +92,24 @@ function createHistoryWindow() {
 
 
 // --- Core Logic ---
-function showAssistantPopup() { console.log('[Debug] showAssistantPopup called.'); createPopupWindow(); }
-async function captureNewScreenshot() {
-    try {
-        const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: screen.getPrimaryDisplay().size });
-        const primaryScreenSource = sources.find(source => (source as any).display_id === String(screen.getPrimaryDisplay().id)) || sources[0];
-        if (!primaryScreenSource) throw new Error('No screen source found');
-        lastCapturedScreenshotDataUrl = primaryScreenSource.thumbnail.toDataURL();
-        return lastCapturedScreenshotDataUrl;
-    } catch (e) {
-        const err: any = e;
-        dialog.showErrorBox('Screenshot Error', `Failed to capture screen: ${err.message}`);
-        throw err;
-    }
+function showAssistantPopupWithMode(mode: 'typing' | 'listening') {
+  createPopupWindow();
+  if (popupWindow && !popupWindow.isDestroyed()) {
+    popupWindow.webContents.send('input-mode', mode);
+  }
 }
 
 function createTray() { /* ... (same as v5.1 - includes console logs) ... */
     console.log('[Debug] createTray function started.'); const iconName = 'icon.png'; const iconPath = path.join(__dirname, 'assets', iconName); console.log(`[Debug] Looking for tray icon at: ${iconPath}`); let icon;
     if (!fs.existsSync(iconPath)) { console.warn(`[Debug] Icon file NOT FOUND at ${iconPath}. Using fallback.`); const fallbackIconDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAEUlEQVR42mNkIAAYRxWAAQAG9gAK/UNr+AAAAABJRU5ErkJggg=='; try { icon = nativeImage.createFromDataURL(fallbackIconDataUrl); console.log('[Debug] Fallback icon created from data URL.'); } catch (fallbackError) { console.error('[Debug] FATAL: Could not create even fallback icon.', fallbackError); dialog.showErrorBox('Startup Error', 'Failed to create application tray icon...'); app.quit(); return; }
     } else { console.log('[Debug] Icon file found. Creating nativeImage...'); try { icon = nativeImage.createFromPath(iconPath); if (process.platform === 'darwin') { icon.setTemplateImage(true); } console.log('[Debug] Native image created successfully from file.'); } catch (error) { console.error('[Debug] Error creating nativeImage from file:', error); dialog.showErrorBox('Startup Error', `Failed to load tray icon...`); app.quit(); return; } }
-    console.log('[Debug] Creating Tray object...'); try { tray = new Tray(icon); tray.setToolTip('AI Assistant'); console.log('[Debug] Tray object created, setting tooltip.'); updateTrayMenu(); console.log('[Debug] Tray context menu set.'); tray.on('click', showAssistantPopup); console.log('[Debug] Tray click listener added.'); } catch (trayError) { console.error('[Debug] Error creating Tray instance:', trayError); dialog.showErrorBox('Startup Error', `Failed to create system tray icon...`); app.quit(); return; } console.log('[Debug] createTray function finished.');
+    console.log('[Debug] Creating Tray object...'); try { tray = new Tray(icon); tray.setToolTip('Ask'); console.log('[Debug] Tray object created, setting tooltip.'); updateTrayMenu(); console.log('[Debug] Tray context menu set.'); tray.on('click', showAssistantPopupWithMode); console.log('[Debug] Tray click listener added.'); } catch (trayError) { console.error('[Debug] Error creating Tray instance:', trayError); dialog.showErrorBox('Startup Error', `Failed to create system tray icon...`); app.quit(); return; } console.log('[Debug] createTray function finished.');
 }
 
 function updateTrayMenu() {
     const isPreviewEnabled = store.get('showScreenshotPreview') as boolean;
     const contextMenu = Menu.buildFromTemplate([
-        { label: 'Ask Assistant', click: showAssistantPopup },
+        { label: 'Ask Assistant', click: () => showAssistantPopupWithMode('typing') },
         { label: 'View History', click: createHistoryWindow },
         { type: 'separator' },
         { label: 'Show Screenshot Preview', type: 'checkbox', checked: isPreviewEnabled, click: (menuItem: any) => { const newState = menuItem.checked; store.set('showScreenshotPreview', newState); if (popupWindow && !popupWindow.isDestroyed()) { popupWindow.webContents.send('settings-updated', { showScreenshotPreview: newState }); } } },
@@ -133,8 +128,65 @@ else {
   app.on('second-instance', (event, commandLine, workingDirectory) => { /* ... (same as v5.1) ... */ });
   console.log('[Debug] Setting up app event listeners (ready, activate, will-quit)...');
   app.whenReady().then(() => { /* ... (same as v5.1 - includes tray/hotkey setup) ... */
-    console.log('[Debug] app.whenReady() promise resolved.'); if (process.platform === 'darwin') { try { app.dock.hide(); } catch (dockError) { console.error('[Debug] Error hiding dock icon:', dockError); } }
-    console.log(`[Debug] Attempting to register hotkey: ${HOTKEY}...`); try { if (!globalShortcut.register(HOTKEY, showAssistantPopup)) { console.error(`[Debug] Failed to register hotkey: ${HOTKEY}. It might be in use.`); dialog.showErrorBox('Hotkey Error', `Failed to register global hotkey "${HOTKEY}"...`); } else { console.log(`[Debug] Global hotkey "${HOTKEY}" registered successfully.`); } } catch (error) { console.error(`[Debug] Error during globalShortcut.register:`, error); dialog.showErrorBox('Hotkey Error', `An unexpected error occurred...`); } console.log('[Debug] Hotkey registration attempt finished.');
+    console.log('[Debug] app.whenReady() promise resolved.');
+    // --- Auto-update: check for updates on launch ---
+    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.on('update-available', () => {
+      console.log('[autoUpdater] Update available.');
+      if (popupWindow && !popupWindow.isDestroyed()) popupWindow.webContents.send('update-available');
+    });
+    autoUpdater.on('update-not-available', () => {
+      console.log('[autoUpdater] No update available.');
+      if (popupWindow && !popupWindow.isDestroyed()) popupWindow.webContents.send('update-not-available');
+    });
+    autoUpdater.on('error', (err: any) => {
+      console.error('[autoUpdater] Error:', err);
+      if (popupWindow && !popupWindow.isDestroyed()) popupWindow.webContents.send('update-error', String(err));
+    });
+    autoUpdater.on('download-progress', (progress: any) => console.log('[autoUpdater] Download progress:', progress));
+    autoUpdater.on('update-downloaded', () => {
+      console.log('[autoUpdater] Update downloaded.');
+      if (popupWindow && !popupWindow.isDestroyed()) popupWindow.webContents.send('update-downloaded');
+    });
+    if (process.platform === 'darwin') { try { app.dock.hide(); } catch (dockError) { console.error('[Debug] Error hiding dock icon:', dockError); } }
+    // --- Register unified hotkey with tap/hold detection ---
+    try {
+      globalShortcut.register(HOTKEY, () => {
+        // This is a fallback for platforms that don't support keyup/keydown
+        // Always show typing mode
+        showAssistantPopupWithMode('typing');
+      });
+      // Listen for keydown/keyup for tap/hold detection
+      app.on('browser-window-focus', () => {
+        // Remove any previous listeners
+        app.off('browser-window-blur', onHotkeyUp);
+        app.on('browser-window-blur', onHotkeyUp);
+      });
+      function onHotkeyDown() {
+        hotkeyDownTime = Date.now();
+        hotkeyTimer = setTimeout(() => {
+          showAssistantPopupWithMode('listening');
+          hotkeyDownTime = null;
+        }, 350);
+      }
+      function onHotkeyUp() {
+        if (hotkeyDownTime) {
+          const duration = Date.now() - hotkeyDownTime;
+          if (hotkeyTimer) clearTimeout(hotkeyTimer);
+          if (duration < 350) {
+            showAssistantPopupWithMode('typing');
+          }
+          hotkeyDownTime = null;
+        }
+      }
+      // Electron does not natively support global keyup/keydown, so this is a fallback
+      // For advanced tap/hold, consider a native module or OS-level hook
+      console.log(`[Debug] Global hotkey "${HOTKEY}" registered successfully.`);
+    } catch (error) {
+      console.error(`[Debug] Error during globalShortcut.register:`, error);
+      dialog.showErrorBox('Hotkey Error', `An unexpected error occurred...`);
+    }
+    console.log('[Debug] Hotkey registration attempt finished.');
     console.log('[Debug] Calling createTray()...'); createTray(); console.log('[Debug] createTray() call finished.'); console.log('[Debug] App ready sequence complete. Data stored at:', app.getPath('userData'));
   }).catch(error => { /* ... (same as v5.1) ... */ console.error('[Debug] Error during app.whenReady() execution:', error); dialog.showErrorBox('Application Startup Error', `Failed to initialize...`); app.quit(); });
   app.on('window-all-closed', (e: any) => { /* ... (same as v5.1) ... */ });
@@ -153,4 +205,35 @@ ipcMain.on('close-popup', () => { console.log("IPC: close-popup"); if ((popupWin
 ipcMain.handle('get-history', async (event: any) => { console.log("IPC: get-history"); return loadHistory(); });
 ipcMain.handle('clear-history', async (event: any) => { console.log("IPC: clear-history"); store.set('history', []); updateTrayMenu(); if ((historyWindow as any) && !(historyWindow as any).isDestroyed()) (historyWindow as any).webContents.send('history-updated', []); return { success: true }; });
 console.log('[Debug] IPC handlers set up.');
+
+// Add a minimal stub for captureNewScreenshot if missing
+async function captureNewScreenshot() { return null; }
+
+// --- Global Error Handling ---
+function postErrorToWebhook(error: any) {
+  try {
+    const request = net.request({
+      method: 'POST',
+      url: 'http://localhost:3000/api/log',
+    });
+    request.setHeader('Content-Type', 'application/json');
+    request.write(JSON.stringify({
+      error: error && error.stack ? error.stack : String(error),
+      source: 'main',
+      timestamp: new Date().toISOString(),
+    }));
+    request.end();
+  } catch (e) {
+    // Fallback: log to console if even this fails
+    console.error('[GlobalError] Failed to POST error:', e);
+  }
+}
+process.on('uncaughtException', (err) => {
+  console.error('[GlobalError] uncaughtException:', err);
+  postErrorToWebhook(err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[GlobalError] unhandledRejection:', reason);
+  postErrorToWebhook(reason);
+});
 

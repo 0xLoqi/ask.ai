@@ -2,12 +2,14 @@
     "name": "ask-ai",
     "version": "0.1.0",
     "description": "Hotkey triggered ask.ai for screenshots with voice input",
-    "main": "main.js",
+    "main": "dist/electron/main.js",
     "scripts": {
         "dev": "ts-node-dev --transpile-only --respawn src/backend/server.ts",
         "build": "tsc -p tsconfig.json",
         "start": "node dist/backend/server.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
     },
     "keywords": [
         "electron",
@@ -28,10 +30,46 @@
         "@types/node": "^22.14.1",
         "@types/ws": "^8.18.1",
         "electron": "^29.1.5",
+        "electron-builder": "^26.0.12",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.8.3"
     },
     "dependencies": {
-        "electron-store": "^8.2.0"
+        "@types/dotenv": "^6.1.1",
+        "bcrypt": "^5.1.1",
+        "cors": "^2.8.5",
+        "dotenv": "^16.5.0",
+        "electron-store": "^8.2.0",
+        "electron-updater": "^6.6.2",
+        "express": "^5.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "openai": "^4.95.0",
+        "zod": "^3.24.3"
+    },
+    "build": {
+        "appId": "com.askai.desktop",
+        "productName": "Ask.ai",
+        "files": [
+            "dist/**/*",
+            "assets/**/*",
+            "popup.html",
+            "popup.css",
+            "history.html",
+            "history.css",
+            "node_modules/**/*",
+            "package.json"
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "cscLink": "C:/Users/Elijah/Documents/askai-alpha.pfx",
+            "cscKeyPassword": "kDieE0j3L!dl$"
+        }
     }
 }

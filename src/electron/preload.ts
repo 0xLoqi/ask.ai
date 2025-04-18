@@ -17,6 +17,12 @@ const validInvokeChannels = [ // Two-way: Renderer -> Main -> Renderer
 const validOnChannels = [ // Main -> Renderer
     'settings-updated',
     'screenshot-updated',
+    'input-mode',
+    // Add update events for UI
+    'update-available',
+    'update-not-available',
+    'update-downloaded',
+    'update-error',
 ];
 
 console.log('Preload script executing...');

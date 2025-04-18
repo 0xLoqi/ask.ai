@@ -12,19 +12,43 @@ if (!apiKey) {
 
 const openai = new OpenAIAny({ apiKey: apiKey });
 
-// --- Speech-to-Text (Placeholder) ---
-export async function transcribeAudio(audioData: any): Promise<string> {
-  console.warn("AI Service: transcribeAudio function not implemented.");
-  return "Placeholder: Audio transcription not implemented.";
+import { Readable } from 'stream';
+
+// --- Speech-to-Text (Whisper Cloud Integration) ---
+export async function transcribeAudio(audioBase64: string): Promise<string> {
+  // audioBase64: base64-encoded WAV (data:audio/wav;base64,... or just base64)
+  try {
+    let base64 = audioBase64;
+    // Remove data URL prefix if present
+    if (base64.startsWith('data:')) {
+      base64 = base64.substring(base64.indexOf(',') + 1);
+    }
+    const audioBuffer = Buffer.from(base64, 'base64');
+    // OpenAI Node SDK expects a file-like object; use a Readable stream
+    const audioStream = Readable.from(audioBuffer);
+    // Whisper expects .wav or .mp3, so we use .wav
+    const response = await openai.audio.transcriptions.create({
+      file: audioStream as any,
+      filename: 'audio.wav',
+      model: 'whisper-1',
+      response_format: 'text',
+      language: 'en', // Optionally set language
+    });
+    // response is the transcript string
+    return typeof response === 'string' ? response : (response.text || '');
+  } catch (err: any) {
+    console.error('Whisper transcription failed:', err.message);
+    throw new Error('Audio transcription failed');
+  }
 }
 
 // --- Vision Model Call (Streaming) ---
-export async function getVisionResponseStream(text: string, imageUrl: string, userId: string): Promise<any> {
-  console.log(`AI Service: Requesting VISION stream for user ${userId}...`);
+export async function getVisionResponseStream(text: string, imageUrl: string, userId: string, model: string): Promise<any> {
+  console.log(`AI Service: Requesting VISION stream for user ${userId} with model ${model}...`);
   try {
     // Request a stream instead of waiting for the full response
     const stream = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
+      model: model,
       messages: [
         {
           role: "user",
@@ -57,12 +81,12 @@ export async function getVisionResponseStream(text: string, imageUrl: string, us
 }
 
 // --- Language Model Call (Streaming) ---
-export async function getLanguageResponseStream(text: string, userId: string): Promise<any> {
-  console.log(`AI Service: Requesting LANGUAGE stream for user ${userId}...`);
+export async function getLanguageResponseStream(text: string, userId: string, model: string): Promise<any> {
+  console.log(`AI Service: Requesting LANGUAGE stream for user ${userId} with model ${model}...`);
   try {
     // Request a stream
     const stream = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: model,
       messages: [
         // { role: "system", content: "You are a helpful assistant." },
         { role: "user", content: text }
