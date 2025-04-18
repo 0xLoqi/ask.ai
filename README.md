@@ -1,78 +1,135 @@
-# ask.ai
+# <img src="assets/logo/ask.ai.png" alt="ask.ai logo" width="64" style="vertical-align:middle;"> ask.ai
 
-Answers in an instant.
+**Ask anything, anywhere, anytime.**
 
-A desktop application built with Electron that provides an AI-powered screenshot assistant with voice input capabilities. This tool allows you to capture screenshots and get AI-powered insights about them using voice commands and hotkeys.
+> _The AI assistant that's always a hotkey away—type or talk, snap a screenshot, and get instant answers. All on your desktop._
 
-## Features
+---
 
-- Voice input as primary query method
-- Global hotkey support (Ctrl+Shift+Space by default) for quick access
-- AI-powered analysis of screenshots using Vision API
-- System tray integration for easy access
-- History viewer to track past interactions
-- Persistent storage of conversation history
-- Modern and intuitive user interface with status indicators
-- Configurable screenshot preview visibility
-- Multiple input modes:
-  - Voice input with automatic transcription
-  - Text input with manual screenshot capture
-  - Combined voice and screenshot analysis
+## 🚀 What is ask.ai?
 
-## Prerequisites
+ask.ai is a playful, privacy-first desktop app that brings GPT-4o and Whisper voice-to-text to your fingertips. Just hit a hotkey, type or speak your question, and get answers—about anything on your screen, or anything on your mind. It's like having a genius sidekick, always ready to help.
 
-- Node.js (v14 or higher)
-- npm (v6 or higher)
-- Electron
-- Microphone access (for voice input)
+- **Superpower:** Snap a screenshot, ask a question, and get AI-powered insights in seconds.
+- **Voice Parity:** Hold the hotkey to talk, tap to type. Whisper Cloud transcribes your voice in real time.
+- **Overlay Magic:** A beautiful, minimal overlay pops up anywhere, anytime.
+- **Privacy by Design:** Your screenshots and audio are auto-deleted after 24h. We don't sell your data. Ever.
+- **Alpha:** This is a closed alpha! Feedback is gold. [Open an issue](https://github.com/0xLoqi/ask.ai/issues) or DM @0xLoqi.
 
-## Installation
+---
 
-1. Clone the repository:
-```bash
-git clone https://github.com/0xLoqi/ask.ai.git
-cd ask.ai
-```
+## ✨ Features
 
-2. Install dependencies:
-```bash
-npm install
-```
+- 🖼️ **Screenshot Q&A:** Instantly ask about anything you see—just snap and ask.
+- 🎤 **Voice or Text:** Speak or type, your choice. Whisper Cloud for fast, accurate transcription.
+- ⚡ **Global Hotkey:** (Ctrl+Shift+Space or Cmd+Shift+Space) — summon the overlay from anywhere.
+- 🪄 **Streaming Answers:** See responses appear as they're generated (SSE-powered).
+- 🕵️ **History Viewer:** Browse, search, and clear your past questions and answers.
+- 🔒 **Local-First:** Your history stays on your device. No cloud storage.
+- 🛡️ **Strict Privacy:** Screenshots/audio auto-delete after 24h. No ads, no tracking.
+- 🧠 **GPT-4o & Vision:** Uses OpenAI's latest models for both text and image understanding.
+- 🛠️ **Built with:** TypeScript, Electron, Zod, OpenAI, Whisper, and more.
 
-3. Start the application:
-```bash
-npm start
-```
+---
 
-## Usage
+## 🛠️ How it Works
 
-1. The application runs in the system tray
-2. Press Ctrl+Shift+Space (or your configured hotkey) to open the popup
-3. Choose your input method:
-   - Voice: Speak your question (automatically transcribed)
-   - Text: Type your question
-4. Select how to send your query:
-   - "Send": Text-only analysis
-   - "Send with New Screenshot": Capture and analyze with current screen
-5. View your interaction history through the tray menu
+1. **Summon the Overlay:**
+   - Tap the hotkey to type, or hold to talk. (Mic unavailable? It falls back to typing mode.)
+2. **Ask Anything:**
+   - Type or speak your question. Attach a screenshot for visual Q&A.
+3. **Get Instant Answers:**
+   - Answers stream in, powered by GPT-4o and Vision.
+4. **Review & Clear History:**
+   - All your Q&A stays local. Clear it anytime.
 
-## Project Structure
+---
 
-- `main.js` - Main Electron process
-- `preload.js` - Preload script for secure IPC communication
-- `popup.html/js/css` - Main UI components with voice input
-- `history.html/js/css` - History viewer components
-- `assets/` - Application assets and icons
+## 🖥️ Installation
 
-## Dependencies
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/0xLoqi/ask.ai.git
+   cd ask.ai
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Start the app:**
+   ```bash
+   npm start
+   ```
 
-- electron: ^29.1.5
-- electron-store: ^8.2.0
+> _Note: This is a closed alpha. You may need an invite or token to use all features._
 
-## License
+---
+
+## 🤖 Tech Stack
+- **Electron** (desktop shell)
+- **TypeScript** (strict mode)
+- **OpenAI GPT-4o** (text & vision)
+- **Whisper Cloud** (voice-to-text)
+- **Zod** (runtime validation)
+- **SSE** (streaming answers)
+- **electron-store** (local storage)
+
+---
+
+## 📝 Project Structure
+- `src/electron/` — Main Electron process
+- `src/renderer/` — Overlay UI, history, and client logic
+- `src/backend/` — API, SSE, and OpenAI integration
+- `assets/` — App icons and logo
+
+---
+
+## 🔒 Privacy
+
+**Your privacy is important. Here's how ask.ai handles your data:**
+
+- **Screenshots & Audio:**
+  - Any screenshots or audio you submit are automatically deleted from our servers after **24 hours**.
+  - No screenshots or audio are retained beyond this period.
+
+- **User Data:**
+  - We do **not** sell, rent, or share your personal data with third parties.
+  - Your queries and responses are stored locally for your own history and are not uploaded to any external service.
+
+- **OpenAI Data Policy:**
+  - All AI processing is performed via the OpenAI API. For details on how OpenAI handles your data, see the [OpenAI API Data Usage Policy](https://openai.com/policies/api-data-usage-policy).
+
+- **Error Logs:**
+  - Error logs are sent to a private webhook for debugging and reliability purposes. These logs may include error messages and technical details, but do **not** include your screenshots, audio, or personal information.
+  - Logs are stored securely and are not shared with third parties.
+
+- **Data Retention:**
+  - Usage logs (model, token counts, latency) are stored locally for analytics and troubleshooting. No user-identifiable information is included.
+  - You may clear your local history at any time via the app's history viewer.
+
+- **Third-Party Sharing:**
+  - No user data is shared with advertisers or analytics providers.
+  - Data is only shared with OpenAI for the purpose of generating responses.
+
+- **Your Rights:**
+  - You may request deletion of your data at any time by contacting the author.
+  - For any privacy concerns, please open an issue or contact the maintainer directly.
+
+---
+
+## 🧪 Alpha Status & Feedback
+
+This is a closed alpha. Features may change, break, or disappear! Your feedback shapes the future of ask.ai.
+
+- Found a bug? Have an idea? [Open an issue](https://github.com/0xLoqi/ask.ai/issues) or DM @0xLoqi.
+- Want to contribute? PRs and suggestions are welcome!
+
+---
+
+## 📜 License
 
 MIT License
 
-## Author
+---
 
-0xLoqi <E.wbanks@yahoo.com> 
+_Made with 🤖, ☕, and a dash of magic by 0xLoqi_ 
