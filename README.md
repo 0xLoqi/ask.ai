@@ -1,6 +1,5 @@
 <div align="center">
-  <img src="assets/logo/ask.ai.png" alt="ask.ai logo" width="120"><br>
-  <span style="font-size:2.5rem; font-weight:700; letter-spacing:-2px;">ask.ai</span>
+  <img src="assets/logo/ask.ai.png" alt="ask.ai logo" width="400"><br>
   <br>
   <span style="font-size:1.35rem; font-weight:600; color:#0d6efd; display:inline-block; margin-top:8px;">
     Ask anything, anywhere, anytime.
