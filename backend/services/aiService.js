@@ -83,8 +83,54 @@ async function getLanguageResponseStream(text, userId) { // Renamed slightly for
   }
 }
 
+// --- Non-streaming Language Model Call ---
+async function getLanguageResponse(text) {
+  console.log(`AI Service: Requesting LANGUAGE (non-stream) ...`);
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "user", content: text }
+      ],
+      max_tokens: 400,
+      stream: false
+    });
+    return response.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error("Error in non-streaming language response:", error.message);
+    throw error;
+  }
+}
+
+// --- Non-streaming Vision Model Call ---
+async function getVisionResponse(text, imageUrl) {
+  console.log(`AI Service: Requesting VISION (non-stream) ...`);
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-turbo",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: text },
+            { type: "image_url", image_url: { "url": imageUrl, "detail": "auto" } }
+          ]
+        }
+      ],
+      max_tokens: 500,
+      stream: false
+    });
+    return response.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error("Error in non-streaming vision response:", error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   transcribeAudio, // Still placeholder
   getVisionResponseStream, // Export streaming version
   getLanguageResponseStream, // Export streaming version
+  getLanguageResponse,
+  getVisionResponse,
 };
